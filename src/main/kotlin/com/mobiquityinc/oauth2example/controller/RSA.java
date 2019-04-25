@@ -22,7 +22,7 @@ public class RSA {
         BufferedReader br = new BufferedReader(new FileReader(filename));
         String line;
         while ((line = br.readLine()) != null) {
-            strKeyPEM += line + "\n";
+            strKeyPEM += line;
         }
         br.close();
         return strKeyPEM;
@@ -36,8 +36,8 @@ public class RSA {
     public static RSAPrivateKey getPrivateKeyFromString(String key) throws IOException, GeneralSecurityException {
 
         String privateKeyPEM = key;
-        privateKeyPEM = privateKeyPEM.replace("-----BEGIN ENCRYPTED PRIVATE KEY-----\n", "");
-        privateKeyPEM = privateKeyPEM.replace("-----END ENCRYPTED PRIVATE KEY-----", "");
+        privateKeyPEM = privateKeyPEM.replace("-----BEGIN PRIVATE KEY-----\n", "");
+        privateKeyPEM = privateKeyPEM.replace("-----END PRIVATE KEY-----", "");
         byte[] encoded = Base64.decodeBase64(privateKeyPEM);
         KeyFactory kf = KeyFactory.getInstance("RSA");
         PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(encoded);
@@ -71,10 +71,10 @@ public class RSA {
         return publicKeyPEM;
     }
 
-    public static String sign(PrivateKey privateKey, String message) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException, UnsupportedEncodingException {
-        Signature sign = Signature.getInstance("SHA1withRSA");
+    public static String sign(PrivateKey privateKey, byte[] message) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException, UnsupportedEncodingException {
+        Signature sign = Signature.getInstance("SHA512withRSA");
         sign.initSign(privateKey);
-        sign.update(message.getBytes("UTF-8"));
+        sign.update(message);
         return new String(Base64.encodeBase64(sign.sign()), "UTF-8");
     }
 

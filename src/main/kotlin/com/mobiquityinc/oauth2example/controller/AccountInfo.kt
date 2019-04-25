@@ -11,6 +11,7 @@ import org.springframework.stereotype.Controller
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.client.RestTemplate
 import java.net.URI
+import java.nio.charset.Charset
 import java.security.MessageDigest
 import java.time.ZoneOffset
 import java.time.ZonedDateTime
@@ -31,6 +32,7 @@ class AccountInfo {
         val headers = getHeaders(auth)
 
         val request = RequestEntity<Unit>(headers, HttpMethod.GET, URI(getAccountsUrl))
+        System.out.println(request)
         restTemplate.exchange(request, String::class.java)
     }
 
@@ -38,13 +40,14 @@ class AccountInfo {
         val headers = HttpHeaders()
         headers.set("x-ibm-client-id", auth.oAuth2Request.clientId)
         headers.set("authorization", "Bearer " + (auth.details as OAuth2AuthenticationDetails).tokenValue)
-        headers.set("accept","application/json")
+        headers.set("accept", "application/json")
         headers.set("date", DateTimeFormatter.RFC_1123_DATE_TIME.format(ZonedDateTime.now(ZoneOffset.UTC)))
         headers.set("digest", createBase64Digest(""))
         //headers.set("psu-ip-address","")
+        headers.set("x-request-id", UUID.randomUUID().toString())
         headers.set("signature", createSignatureHeader(headers))
         headers.set("tpp-signature-certificate", getCertificate())
-        headers.set("x-request-id", UUID.randomUUID().toString())
+
         return headers
     }
 
@@ -53,10 +56,10 @@ class AccountInfo {
     }
 
     private fun createSignatureHeader(headers: HttpHeaders): String? {
-        val certSerialNumber = "9948101512907732203"
+        val certSerialNumber = "1523433508"
 
-        val signingString = "date: ${headers["date"]}\ndigest: ${headers["digest"]}\nx-request-id: ${headers["x-request-id"]}"
-        val signature = RSA.encrypt(signingString, RSA.getPrivateKey("src/main/resources/certs/key.pem"))
+        val signingString = "date: ${headers["date"]?.first()}\ndigest: ${headers["digest"]?.first()}\nx-request-id: ${headers["x-request-id"]?.first()}"
+        val signature = RSA.sign(RSA.getPrivateKey("src/main/resources/certs/key.pem"), signingString.toByteArray(Charset.forName("UTF-8")))
 
         return "keyId=\"$certSerialNumber\",algorithm=\"rsa-sha512\",headers=\"date digest x-request-id\",signature=\"$signature\""
     }
